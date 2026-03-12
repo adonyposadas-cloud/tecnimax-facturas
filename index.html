@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TECNIMAX · Recepción de Facturas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg:#0f0f0f; --bg2:#1a1a1a; --bg3:#242424; --bg4:#2e2e2e;
+    --border:#333; --border2:#444;
+    --text:#e8e8e8; --text2:#999; --text3:#555;
+    --orange:#f59e0b; --orange2:#d97706;
+    --green:#22c55e; --green2:#16a34a;
+    --red:#ef4444; --blue:#3b82f6; --purple:#a855f7; --yellow:#eab308;
+    --font:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh;}
+
+  .screen{display:none;align-items:center;justify-content:center;min-height:100vh;}
+  .screen.active{display:flex;}
+
+  .login-box{width:380px;background:var(--bg2);border:1px solid var(--border);padding:40px 32px;border-radius:4px;}
+  .login-logo{text-align:center;margin-bottom:28px;}
+  .login-logo .brand{font-size:22px;font-weight:700;letter-spacing:3px;color:var(--orange);font-family:var(--mono);}
+  .login-logo .sub{font-size:11px;color:var(--text2);letter-spacing:2px;margin-top:4px;text-transform:uppercase;}
+
+  .emp-hint{font-size:12px;color:var(--text2);text-align:center;margin-bottom:20px;line-height:1.7;}
+  .code-input{width:100%;background:var(--bg3);border:2px solid var(--border);color:var(--orange);padding:14px 16px;border-radius:3px;font-family:var(--mono);font-size:24px;outline:none;text-align:center;letter-spacing:5px;margin-bottom:16px;}
+  .code-input:focus{border-color:var(--orange);}
+
+  .login-label{font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+  .login-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:3px;font-family:var(--font);font-size:14px;margin-bottom:14px;outline:none;}
+  .login-input:focus{border-color:var(--orange);}
+  .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+  .role-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:12px 6px;border-radius:3px;cursor:pointer;font-size:13px;text-align:center;transition:all .15s;font-family:var(--font);}
+  .role-btn:hover,.role-btn.active{border-color:var(--orange);color:var(--orange);background:rgba(245,158,11,.1);}
+  .btn-primary{width:100%;background:var(--orange);color:#000;border:none;padding:12px;border-radius:3px;font-weight:700;font-size:14px;cursor:pointer;letter-spacing:1px;transition:background .15s;font-family:var(--font);}
+  .btn-primary:hover{background:var(--orange2);}
+  .login-sep{text-align:center;color:var(--text3);font-size:12px;margin:16px 0;position:relative;}
+  .login-sep::before,.login-sep::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border);}
+  .login-sep::before{left:0;}.login-sep::after{right:0;}
+  .btn-link{width:100%;background:none;border:1px solid var(--border);color:var(--text2);padding:10px;border-radius:3px;cursor:pointer;font-size:12px;font-family:var(--font);transition:all .15s;}
+  .btn-link:hover{border-color:var(--border2);color:var(--text);}
+  .login-error{color:var(--red);font-size:12px;margin-top:10px;text-align:center;display:none;}
+
+  #app{display:none;flex-direction:column;min-height:100vh;}
+  .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .topbar-left{display:flex;align-items:center;gap:16px;}
+  .topbar-brand{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--orange);letter-spacing:2px;}
+  .topbar-module{font-size:12px;color:var(--text2);letter-spacing:1px;}
+  .topbar-right{display:flex;align-items:center;gap:8px;}
+  .badge-user{background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:2px;font-size:12px;}
+  .badge-code{font-family:var(--mono);font-size:11px;color:var(--orange);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);padding:3px 8px;border-radius:2px;}
+  .badge-role{padding:3px 8px;border-radius:2px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+  .r-entregador{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3);}
+  .r-cajera{background:rgba(245,158,11,.15);color:var(--orange);border:1px solid rgba(245,158,11,.3);}
+  .r-auxiliar{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3);}
+  .btn-logout{background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:2px;cursor:pointer;font-size:12px;font-family:var(--font);}
+  .btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+  .tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;}
+  .tab{padding:12px 18px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+  .tab-count{display:inline-block;background:var(--orange);color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:5px;}
+
+  .main{padding:20px;max-width:1100px;margin:0 auto;}
+  .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+  .sec-title{font-size:16px;font-weight:600;}
+  .sec-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:18px;margin-bottom:12px;}
+  .card-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;}
+  .card-title{font-weight:600;font-size:14px;}
+  .card-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+
+  .status{display:inline-block;padding:2px 8px;border-radius:2px;font-size:11px;font-weight:600;letter-spacing:.5px;}
+  .st-pendiente{background:rgba(234,179,8,.12);color:var(--yellow);border:1px solid rgba(234,179,8,.3);}
+  .st-recibida{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.3);}
+  .st-procesada{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.3);}
+  .st-completada{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+  .st-activo{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+  .st-inactivo{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+
+  .fsec{margin-bottom:18px;}
+  .fsec-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .frow{display:grid;gap:12px;margin-bottom:12px;}
+  .f2{grid-template-columns:1fr 1fr;}.f3{grid-template-columns:1fr 1fr 1fr;}
+  .fg{display:flex;flex-direction:column;}
+  .flabel{font-size:11px;color:var(--text2);letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase;}
+  .fctl{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:3px;font-family:var(--font);font-size:13px;outline:none;transition:border-color .15s;}
+  .fctl:focus{border-color:var(--orange);}
+  .fctl::placeholder{color:var(--text3);}
+
+  .fblock{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:14px;margin-bottom:10px;}
+  .fblock-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .fnum{font-family:var(--mono);font-size:12px;color:var(--orange);font-weight:600;}
+  .btn-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;}
+  .btn-rm:hover{color:var(--red);}
+  .file-drop{border:1px dashed var(--border2);border-radius:3px;padding:14px;text-align:center;color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;margin-top:4px;}
+  .file-drop:hover{border-color:var(--orange);color:var(--orange);}
+  .img-prev{max-width:100%;max-height:110px;border-radius:3px;margin-top:8px;border:1px solid var(--border);cursor:pointer;}
+
+  .mf{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:10px 12px;margin-bottom:6px;}
+  .mf-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .mf-num{font-family:var(--mono);font-size:12px;color:var(--orange);}
+
+  .btn{padding:8px 14px;border-radius:3px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;letter-spacing:.3px;}
+  .btn-orange{background:var(--orange);color:#000;}.btn-orange:hover{background:var(--orange2);}
+  .btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border);}.btn-ghost:hover{border-color:var(--orange);color:var(--orange);}
+  .btn-green{background:var(--green2);color:#fff;}.btn-green:hover{background:#15803d;}
+  .btn-sm{padding:6px 11px;font-size:12px;}
+  .brow{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .tbl{width:100%;border-collapse:collapse;}
+  .tbl th{background:var(--bg3);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);}
+  .tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+  .tbl tr:hover td{background:rgba(255,255,255,.02);}
+
+  .fbar{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;}
+  .si{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:3px;font-family:var(--font);font-size:13px;outline:none;flex:1;min-width:180px;max-width:320px;}
+  .si:focus{border-color:var(--orange);}
+  .si::placeholder{color:var(--text3);}
+
+  .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center;padding:20px;}
+  .modal-ov.open{display:flex;}
+  .modal{background:var(--bg2);border:1px solid var(--border);border-radius:4px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;padding:24px;}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+  .modal-sub{font-size:12px;color:var(--text2);margin-bottom:18px;}
+  .modal-close{float:right;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;margin-top:-4px;}
+  .modal-close:hover{color:var(--red);}
+
+  .dr{display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;}
+  .di{flex:1;min-width:130px;}
+  .dl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+  .dv{font-size:13px;font-weight:500;}
+
+  .emp-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .ec-info{flex:1;}
+  .ec-name{font-weight:600;}
+  .ec-code{font-family:var(--mono);font-size:12px;color:var(--orange);margin-top:2px;}
+
+  .divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
+  .text-orange{color:var(--orange);}.text-green{color:var(--green);}.text-red{color:var(--red);}
+  .text-muted{color:var(--text2);}.mono{font-family:var(--mono);}.fw6{font-weight:600;}
+  .mb8{margin-bottom:8px;}.mt12{margin-top:12px;}
+  .thumb{width:56px;height:42px;object-fit:cover;border-radius:2px;border:1px solid var(--border);cursor:pointer;}
+  .thumbs-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+
+  .empty{text-align:center;padding:48px 20px;color:var(--text2);}
+  .empty-icon{font-size:38px;margin-bottom:10px;}
+  .empty-text{font-size:14px;}
+
+  #toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:11px 16px;font-size:13px;max-width:300px;transform:translateY(70px);opacity:0;transition:all .25s;}
+  #toast.show{transform:translateY(0);opacity:1;}
+  #toast.success{border-color:var(--green);}
+  #toast.error{border-color:var(--red);}
+
+  #lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;align-items:center;justify-content:center;}
+  #lightbox.open{display:flex;}
+  #lightbox img{max-width:92vw;max-height:92vh;border-radius:4px;}
+  #lb-close{position:fixed;top:18px;right:20px;color:#fff;font-size:28px;cursor:pointer;}
+
+  #validating{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;align-items:center;justify-content:center;}
+  #validating.open{display:flex;}
+  .val-box{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:32px 40px;text-align:center;}
+  .val-spin{font-size:28px;animation:spin 1s linear infinite;display:block;margin-bottom:12px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  @media(max-width:600px){.f2,.f3{grid-template-columns:1fr;}.role-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ══ PANTALLA ENTREGADOR ══ -->
+<div id="scEmp" class="screen active">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">TECNIMAX</div>
+      <div class="sub">Portal de Entrega de Facturas</div>
+    </div>
+    <p class="emp-hint">Ingresa tu código de empleado para acceder.<br>Si no lo tienes, consulta a la auxiliar contable.</p>
+    <input id="empCode" class="code-input" placeholder="EMP-000" maxlength="10"
+      oninput="this.value=this.value.toUpperCase()"
+      onkeydown="if(event.key==='Enter')loginEmp()" />
+    <button class="btn-primary" onclick="loginEmp()">INGRESAR</button>
+    <div class="login-error" id="empErr"></div>
+    <div class="login-sep">o</div>
+    <button class="btn-link" onclick="showStaff()">🔐 Acceso Cajera / Auxiliar Contable</button>
+  </div>
+</div>
+
+<!-- ══ PANTALLA STAFF ══ -->
+<div id="scStaff" class="screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">TECNIMAX</div>
+      <div class="sub">Acceso Interno</div>
+    </div>
+    <div class="fg mb8">
+      <div class="login-label">Usuario</div>
+      <input id="staffUser" class="login-input" placeholder="Tu usuario" onkeydown="if(event.key==='Enter')document.getElementById('staffPass').focus()" />
+    </div>
+    <div class="fg" style="margin-bottom:18px">
+      <div class="login-label">Contraseña</div>
+      <input id="staffPass" type="password" class="login-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginStaff()" />
+    </div>
+    <button class="btn-primary" onclick="loginStaff()">INGRESAR</button>
+    <div class="login-error" id="staffErr"></div>
+    <div class="login-sep">←</div>
+    <button class="btn-link" onclick="showEmp()">Volver al portal de entregadores</button>
+  </div>
+</div>
+
+<!-- ══ VALIDANDO ══ -->
+<div id="validating">
+  <div class="val-box">
+    <span class="val-spin">⏳</span>
+    <div style="color:var(--text2);font-size:13px">Validando código de empleado...</div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">TECNIMAX</span>
+      <span class="topbar-module">RECEPCIÓN DE FACTURAS</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge-user" id="topName"></span>
+      <span id="topCode"></span>
+      <span class="badge-role" id="topRole"></span>
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabBar"></div>
+  <div class="main" id="mainContent"></div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-ov" id="modalOv" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div id="lightbox" onclick="closeLB()">
+  <span id="lb-close">✕</span>
+  <img id="lbImg" src="" />
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+//  CONFIG  ←  reemplazar GAS_URL al desplegar
+// ─────────────────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzX2aE96b6dzEXDY377hM4wG--lO1onaCM_4HfMmUUk1CsxesjZI85i4CDlPAbxxZlL/exec';
+const FORMAS_PAGO = ['Efectivo Caja General','Efectivo Caja Chica','Transferencia BAC','Cheque','Crédito/CxP','Tarjeta'];
+const MAX_FACT = 5;
+
+// ─────────────────────────────────────────────────────────
+//  ESTADO
+// ─────────────────────────────────────────────────────────
+let U = null; // usuario actual
+let S = { solicitudes:[], empleados:[] };
+let activeTab = 0;
+let nFact = 1;
+let filtroEnt = '';
+let selectedRole = null;
+
+// ─────────────────────────────────────────────────────────
+//  PANTALLAS LOGIN
+// ─────────────────────────────────────────────────────────
+function showStaff() { hide('scEmp'); show('scStaff'); }
+function showEmp()   { hide('scStaff'); show('scEmp'); }
+function show(id)    { document.getElementById(id).classList.add('active'); }
+function hide(id)    { document.getElementById(id).classList.remove('active'); }
+
+// ─────────────────────────────────────────────────────────
+//  LOGIN ENTREGADOR
+// ─────────────────────────────────────────────────────────
+async function loginEmp() {
+  const code = document.getElementById('empCode').value.trim().toUpperCase();
+  if (!code) { empErr('Ingresa tu código de empleado.'); return; }
+  document.getElementById('empErr').style.display = 'none';
+  document.getElementById('validating').classList.add('open');
+  try {
+    const r = await gasGet({ action:'validarEmpleado', codigo:code });
+    document.getElementById('validating').classList.remove('open');
+    if (r.ok && r.empleado?.activo) {
+      U = { name:r.empleado.nombre, role:'entregador', codigo:r.empleado.codigo, dep:r.empleado.departamento||'' };
+      boot();
+    } else { empErr(r.empleado ? 'Tu cuenta está inactiva. Consulta a la auxiliar contable.' : 'Código no encontrado.'); }
+  } catch(e) {
+    document.getElementById('validating').classList.remove('open');
+    const emp = S.empleados.find(x=>x.codigo===code);
+    if (emp?.activo) { U={name:emp.nombre,role:'entregador',codigo:emp.codigo,dep:emp.departamento||''}; boot(); }
+    else empErr('Sin conexión o código inválido. Intenta de nuevo.');
+  }
+}
+function empErr(msg) { const e=document.getElementById('empErr'); e.textContent=msg; e.style.display='block'; }
+
+// ─────────────────────────────────────────────────────────
+//  LOGIN STAFF — usuario + contraseña validados en Sheet
+// ─────────────────────────────────────────────────────────
+async function loginStaff() {
+  const user = document.getElementById('staffUser').value.trim();
+  const pass = document.getElementById('staffPass').value.trim();
+  if (!user || !pass) { staffErr('Ingresa usuario y contraseña.'); return; }
+  document.getElementById('staffErr').style.display = 'none';
+  document.getElementById('validating').classList.add('open');
+  try {
+    const r = await gasGet({ action:'validarStaff', usuario:user, password:pass });
+    document.getElementById('validating').classList.remove('open');
+    if (r.ok && r.staff) {
+      if (!r.staff.activo) { staffErr('Tu cuenta está inactiva. Contacta al administrador.'); return; }
+      U = { name:r.staff.nombre, role:r.staff.rol, usuario:r.staff.usuario };
+      boot();
+    } else { staffErr('Usuario o contraseña incorrectos.'); }
+  } catch(e) {
+    document.getElementById('validating').classList.remove('open');
+    staffErr('Sin conexión. Intenta de nuevo.');
+  }
+}
+function staffErr(msg) { const e=document.getElementById('staffErr'); e.textContent=msg; e.style.display='block'; }
+
+// ─────────────────────────────────────────────────────────
+//  BOOT APP
+// ─────────────────────────────────────────────────────────
+function boot() {
+  hide('scEmp'); hide('scStaff');
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('topName').textContent = U.name;
+  const codeEl = document.getElementById('topCode');
+  if (U.codigo) { codeEl.className='badge-code'; codeEl.textContent=U.codigo; } else { codeEl.textContent=''; codeEl.className=''; }
+  const rl = {entregador:'Entregador',cajera:'Cajera',auxiliar:'Auxiliar Contable'};
+  const rc = {entregador:'r-entregador',cajera:'r-cajera',auxiliar:'r-auxiliar'};
+  document.getElementById('topRole').textContent = rl[U.role];
+  document.getElementById('topRole').className = 'badge-role '+rc[U.role];
+  activeTab=0; nFact=1; filtroEnt='';
+  setupTabs(); loadData();
+}
+
+function doLogout() {
+  U=null; selectedRole=null; activeTab=0; nFact=1; filtroEnt='';
+  document.getElementById('app').style.display='none';
+  document.getElementById('empCode').value='';
+  document.getElementById('empErr').style.display='none';
+  document.getElementById('staffName').value='';
+  document.getElementById('staffErr').style.display='none';
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+  hide('scStaff'); show('scEmp');
+}
+
+// ─────────────────────────────────────────────────────────
+//  TABS
+// ─────────────────────────────────────────────────────────
+function tabs() {
+  if (U.role==='entregador') return [{l:'📤 Nueva Solicitud',k:'nueva'},{l:'📋 Mis Solicitudes',k:'mis'}];
+  if (U.role==='cajera')    return [{l:'📥 Pendientes <span id="c1" class="tab-count">0</span>',k:'pend'},{l:'🔧 Recibidas',k:'recib'},{l:'📊 Historial',k:'histo'}];
+  if (U.role==='auxiliar')  return [{l:'📦 Para Recibir <span id="c2" class="tab-count">0</span>',k:'para'},{l:'✔ Completadas',k:'comp'},{l:'👤 Empleados',k:'emps'}];
+  return [];
+}
+function setupTabs() {
+  const T=tabs(); const bar=document.getElementById('tabBar'); bar.innerHTML='';
+  T.forEach((t,i)=>{
+    const el=document.createElement('div');
+    el.className='tab'+(i===0?' active':''); el.innerHTML=t.l;
+    el.onclick=()=>{activeTab=i;renderTabs();renderContent();};
+    bar.appendChild(el);
+  });
+}
+function renderTabs() {
+  const T=tabs();
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.className='tab'+(i===activeTab?' active':'');el.innerHTML=T[i]?.l||'';});
+  const c1=document.getElementById('c1'); const c2=document.getElementById('c2');
+  if(c1) c1.textContent=S.solicitudes.filter(s=>s.estado==='pendiente').length;
+  if(c2) c2.textContent=S.solicitudes.filter(s=>s.estado==='procesada').length;
+}
+
+// ─────────────────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const [rS,rE] = await Promise.all([gasGet({action:'getSolicitudes'}),gasGet({action:'getEmpleados'})]);
+    if(rS.ok) S.solicitudes=rS.data||[];
+    if(rE.ok) S.empleados=rE.data||[];
+  } catch(e){}
+  renderTabs(); renderContent();
+}
+async function gasGet(p) {
+  const r = await fetch('/gas?' + new URLSearchParams(p));
+  return r.json();
+}
+async function gasPost(p) {
+  const r = await fetch('/gas', { method:'POST', body:JSON.stringify(p), headers:{'Content-Type':'application/json'} });
+  return r.json();
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER PRINCIPAL
+// ─────────────────────────────────────────────────────────
+function renderContent() {
+  const k=tabs()[activeTab]?.k;
+  const m={nueva:vNueva,mis:vMis,pend:vPend,recib:vRecib,histo:vHisto,para:vPara,comp:vComp,emps:vEmps};
+  document.getElementById('mainContent').innerHTML = m[k] ? m[k]() : '';
+}
+
+// ─────────────────────────────────────────────────────────
+//  ENTREGADOR — NUEVA
+// ─────────────────────────────────────────────────────────
+function vNueva() {
+  return `<div class="sec-hdr"><div><div class="sec-title">Nueva Solicitud de Entrega</div><div class="sec-sub">Máximo ${MAX_FACT} facturas por solicitud</div></div></div>
+  <div class="card">
+    <div class="fsec"><div class="fsec-title">📋 Datos del Entregador</div>
+      <div class="frow f2">
+        <div class="fg"><label class="flabel">Empleado</label><input class="fctl" value="${U.name} (${U.codigo})" disabled style="opacity:.6"/></div>
+        <div class="fg"><label class="flabel">Proveedor de la(s) Factura(s) *</label><input class="fctl" id="prov" placeholder="Nombre del proveedor / empresa"/></div>
+      </div>
+    </div>
+    <div class="fsec"><div class="fsec-title">🧾 Facturas</div>
+      <div id="fbCont">${bloques()}</div>
+      <div class="brow mt12"><button class="btn btn-ghost btn-sm" id="btnAdd" onclick="addF()">+ Agregar Factura</button></div>
+    </div>
+    <hr class="divider">
+    <div class="brow"><button class="btn btn-orange" onclick="enviar()">📤 Enviar Solicitud</button><button class="btn btn-ghost" onclick="resetNueva()">Limpiar</button></div>
+  </div>`;
+}
+
+function bloques() {
+  let h='';
+  for(let i=0;i<nFact;i++) h+=`
+  <div class="fblock" id="fb${i}">
+    <div class="fblock-hdr"><span class="fnum">FACTURA #${i+1}</span>${i>0?`<button class="btn-rm" onclick="remF()">✕</button>`:''}</div>
+    <div class="frow f3">
+      <div class="fg"><label class="flabel">Fecha Factura *</label><input type="date" class="fctl" id="ff${i}" value="${hoy()}"/></div>
+      <div class="fg"><label class="flabel">N° Factura *</label><input class="fctl" id="fn${i}" placeholder="0000-0000-00000000"/></div>
+      <div class="fg"><label class="flabel">Monto (L.) *</label><input type="number" class="fctl" id="fm${i}" placeholder="0.00" step="0.01" min="0"/></div>
+    </div>
+    <div class="frow f2">
+      <div class="fg"><label class="flabel">Forma de Pago *</label>
+        <select class="fctl" id="fp${i}"><option value="">-- Seleccionar --</option>${FORMAS_PAGO.map(p=>`<option>${p}</option>`).join('')}</select>
+      </div>
+      <div class="fg"><label class="flabel">Imagen de Factura *</label>
+        <div class="file-drop" onclick="document.getElementById('fi${i}').click()">📷 Adjuntar imagen</div>
+        <input type="file" id="fi${i}" accept="image/*" style="display:none" onchange="prevI(${i})"/>
+        <div id="fp_prev${i}"></div>
+      </div>
+    </div>
+    <div class="fg"><label class="flabel">Observación (opcional)</label><input class="fctl" id="fo${i}" placeholder="Notas adicionales..."/></div>
+  </div>`;
+  return h;
+}
+
+function prevI(i) {
+  const f=document.getElementById('fi'+i).files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=e=>{document.getElementById('fp_prev'+i).innerHTML=`<img class="img-prev" src="${e.target.result}" onclick="openLB('${e.target.result}')"/>`;}; r.readAsDataURL(f);
+}
+function addF() { if(nFact>=MAX_FACT){toast('Máximo '+MAX_FACT+' facturas','error');return;} nFact++; document.getElementById('fbCont').innerHTML=bloques(); if(nFact>=MAX_FACT&&document.getElementById('btnAdd'))document.getElementById('btnAdd').style.display='none'; }
+function remF() { if(nFact<=1)return; nFact--; document.getElementById('fbCont').innerHTML=bloques(); const b=document.getElementById('btnAdd'); if(b)b.style.display=''; }
+function resetNueva() { nFact=1; document.getElementById('mainContent').innerHTML=vNueva(); }
+
+async function enviar() {
+  const prov=document.getElementById('prov')?.value.trim();
+  if(!prov){toast('Ingresa el proveedor','error');return;}
+  let facts=[];
+  for(let i=0;i<nFact;i++){
+    const fecha=document.getElementById('ff'+i)?.value;
+    const num=document.getElementById('fn'+i)?.value.trim();
+    const monto=document.getElementById('fm'+i)?.value;
+    const pago=document.getElementById('fp'+i)?.value;
+    const obs=document.getElementById('fo'+i)?.value.trim();
+    const imgEl=document.getElementById('fi'+i);
+    if(!fecha||!num||!monto||!pago){toast('Completa todos los campos de Factura #'+(i+1),'error');return;}
+    if(!imgEl?.files[0]){toast('Adjunta imagen de Factura #'+(i+1),'error');return;}
+    facts.push({fecha,numero:num,monto:parseFloat(monto),pago,obs,imgB64:await f2b64(imgEl.files[0]),imgName:imgEl.files[0].name});
+  }
+  const sol={id:'SOL-'+Date.now(),empleadoCodigo:U.codigo,entregador:U.name,proveedor:prov,timestamp:new Date().toISOString(),estado:'pendiente',facturas:facts,notas_cajera:'',excel_cajera:null,timestamp_recibida:null,timestamp_procesada:null,recibida_por:'',completada_por:''};
+  toast('Enviando...','');
+  try { const r=await gasPost({action:'nuevaSolicitud',data:sol}); if(r.ok){S.solicitudes.unshift(sol);toast('✅ Solicitud enviada','success');}else{toast('Error: '+r.msg,'error');return;} }
+  catch(e){ S.solicitudes.unshift(sol); toast('⚠ Guardado localmente (sin conexión)','error'); }
+  nFact=1; activeTab=1; setupTabs(); renderContent();
+}
+
+// ─────────────────────────────────────────────────────────
+//  ENTREGADOR — MIS SOLICITUDES
+// ─────────────────────────────────────────────────────────
+function vMis() {
+  const mias=S.solicitudes.filter(s=>s.empleadoCodigo===U.codigo||s.entregador===U.name);
+  return `<div class="sec-hdr"><div><div class="sec-title">Mis Solicitudes</div><div class="sec-sub">${mias.length} solicitud(es)</div></div><button class="btn btn-ghost btn-sm" onclick="loadData()">↻ Actualizar</button></div>
+  ${mias.length ? mias.map(s=>cResumen(s,true)).join('') : empty('📋','No has enviado solicitudes aún')}`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  CAJERA — PENDIENTES
+// ─────────────────────────────────────────────────────────
+function vPend() {
+  const pend=S.solicitudes.filter(s=>s.estado==='pendiente');
+  const list=filtroEnt ? pend.filter(s=>s.entregador.toLowerCase().includes(filtroEnt.toLowerCase())) : pend;
+  return `<div class="sec-hdr"><div><div class="sec-title">Solicitudes Pendientes</div><div class="sec-sub">${pend.length} en espera</div></div><button class="btn btn-ghost btn-sm" onclick="loadData()">↻ Actualizar</button></div>
+  <div class="fbar"><input class="si" placeholder="🔍 Filtrar por nombre del entregador..." value="${filtroEnt}" oninput="filtroEnt=this.value;renderContent()"/></div>
+  ${list.length ? list.map(s=>cPend(s)).join('') : empty('📭',filtroEnt?'Sin coincidencias':'No hay solicitudes pendientes')}`;
+}
+function cPend(s) {
+  const tot=s.facturas.reduce((a,f)=>a+f.monto,0);
+  return `<div class="card"><div class="card-hdr"><div><div class="card-title">👤 ${s.entregador} <span class="badge-code">${s.empleadoCodigo||''}</span></div><div class="card-meta mono">${s.id} · ${fd(s.timestamp)} · ${s.proveedor}</div></div><div style="text-align:right"><div class="text-orange fw6 mono">L. ${fmt(tot)}</div><div class="text-muted" style="font-size:12px">${s.facturas.length} factura(s)</div></div></div>
+  ${s.facturas.map(f=>mf(f)).join('')}
+  <div class="brow mt12"><button class="btn btn-green btn-sm" onclick="marcarRec('${s.id}')">✅ Recibida</button><button class="btn btn-ghost btn-sm" onclick="verDet('${s.id}')">🔍 Detalle</button></div></div>`;
+}
+async function marcarRec(id) {
+  const s=S.solicitudes.find(x=>x.id===id); if(!s)return;
+  s.estado='recibida_cajera'; s.timestamp_recibida=new Date().toISOString(); s.recibida_por=U.name;
+  toast('Marcando...','');
+  try{await gasPost({action:'actualizarEstado',id,estado:'recibida_cajera',cajera:U.name,timestamp_recibida:s.timestamp_recibida});toast('✅ Marcada como recibida','success');}
+  catch(e){toast('⚠ Actualizado localmente','error');}
+  renderTabs(); renderContent();
+}
+
+// ─────────────────────────────────────────────────────────
+//  CAJERA — RECIBIDAS (procesar + adjuntar excel)
+// ─────────────────────────────────────────────────────────
+function vRecib() {
+  const items=S.solicitudes.filter(s=>s.estado==='recibida_cajera');
+  return `<div class="sec-hdr"><div><div class="sec-title">Recibidas — Pendiente de Procesar</div><div class="sec-sub">${items.length} solicitud(es)</div></div></div>
+  ${items.length ? items.map(s=>cRecib(s)).join('') : empty('✅','No hay facturas pendientes de procesar')}`;
+}
+function cRecib(s) {
+  const tot=s.facturas.reduce((a,f)=>a+f.monto,0);
+  return `<div class="card"><div class="card-hdr"><div><div class="card-title">👤 ${s.entregador} — ${s.proveedor}</div><div class="card-meta mono">${s.id} · Recibida: ${fd(s.timestamp_recibida)}</div></div><span class="text-orange fw6 mono">L. ${fmt(tot)}</span></div>
+  ${s.facturas.map(f=>mf(f)).join('')}
+  <hr class="divider">
+  <div class="fg mb8"><label class="flabel">Notas de procesamiento (opcional)</label><input class="fctl" id="nt_${s.id}" placeholder="Observaciones..." value="${s.notas_cajera||''}"/></div>
+  <div class="fg mb8"><label class="flabel">Adjuntar Excel de facturas trabajadas *</label>
+    <div class="file-drop" onclick="document.getElementById('ex_${s.id}').click()">📊 Adjuntar .xlsx</div>
+    <input type="file" id="ex_${s.id}" accept=".xlsx,.xls,.csv" style="display:none" onchange="showXlsNm('${s.id}')"/>
+    <div id="xlsNm_${s.id}" style="font-size:12px;color:var(--green);margin-top:4px"></div>
+  </div>
+  <div class="brow"><button class="btn btn-orange btn-sm" onclick="marcarProc('${s.id}')">📤 Enviar a Auxiliar Contable</button><button class="btn btn-ghost btn-sm" onclick="verDet('${s.id}')">🔍 Detalle</button></div>
+  </div>`;
+}
+function showXlsNm(id){const f=document.getElementById('ex_'+id)?.files[0];if(f)document.getElementById('xlsNm_'+id).textContent='📎 '+f.name;}
+async function marcarProc(id) {
+  const s=S.solicitudes.find(x=>x.id===id); if(!s)return;
+  const xEl=document.getElementById('ex_'+id);
+  if(!xEl?.files[0]){toast('Debes adjuntar el archivo Excel','error');return;}
+  const notas=document.getElementById('nt_'+id)?.value.trim()||'';
+  const xb64=await f2b64(xEl.files[0]);
+  s.estado='procesada'; s.notas_cajera=notas; s.excel_cajera={name:xEl.files[0].name,data:xb64}; s.timestamp_procesada=new Date().toISOString();
+  toast('Enviando a auxiliar...','');
+  try{await gasPost({action:'actualizarProcesada',id,notas,excelName:s.excel_cajera.name,excelB64:xb64,timestamp_procesada:s.timestamp_procesada});toast('✅ Enviado a Auxiliar Contable','success');}
+  catch(e){toast('⚠ Actualizado localmente','error');}
+  renderTabs(); renderContent();
+}
+function vHisto() {
+  const items=S.solicitudes.filter(s=>['procesada','completada'].includes(s.estado));
+  return `<div class="sec-hdr"><div><div class="sec-title">Historial</div><div class="sec-sub">${items.length} solicitud(es)</div></div></div>
+  ${items.length?items.map(s=>cResumen(s,true)).join(''):empty('📊','Sin historial')}`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  AUXILIAR — PARA RECIBIR
+// ─────────────────────────────────────────────────────────
+function vPara() {
+  const items=S.solicitudes.filter(s=>s.estado==='procesada');
+  return `<div class="sec-hdr"><div><div class="sec-title">Documentación para Recibir</div><div class="sec-sub">${items.length} paquete(s) listos con Excel adjunto</div></div><button class="btn btn-ghost btn-sm" onclick="loadData()">↻ Actualizar</button></div>
+  ${items.length?items.map(s=>cAux(s)).join(''):empty('📋','No hay documentación pendiente')}`;
+}
+function cAux(s) {
+  const tot=s.facturas.reduce((a,f)=>a+f.monto,0);
+  return `<div class="card"><div class="card-hdr"><div><div class="card-title">👤 ${s.entregador} <span class="badge-code">${s.empleadoCodigo||''}</span> — ${s.proveedor}</div><div class="card-meta mono">${s.id} · Procesada: ${fd(s.timestamp_procesada)}</div></div><div style="text-align:right"><div class="text-orange fw6 mono">L. ${fmt(tot)}</div><span class="status st-procesada">Listo</span></div></div>
+  ${s.facturas.map(f=>mf(f)).join('')}
+  ${s.notas_cajera?`<div style="margin:8px 0;padding:8px 10px;background:var(--bg3);border-radius:3px;font-size:12px"><span class="text-muted">Notas cajera:</span> ${s.notas_cajera}</div>`:''}
+  ${s.excel_cajera?`<div style="margin:8px 0;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:space-between"><span>📊 ${s.excel_cajera.name}</span><button class="btn btn-ghost btn-sm" onclick="dlExcel('${s.id}')">⬇ Descargar</button></div>`:''}
+  <div class="brow mt12"><button class="btn btn-green btn-sm" onclick="marcarComp('${s.id}')">✔ Confirmar Recepción Física</button><button class="btn btn-ghost btn-sm" onclick="verDet('${s.id}')">🔍 Detalle</button></div>
+  </div>`;
+}
+function dlExcel(id){const s=S.solicitudes.find(x=>x.id===id);if(!s?.excel_cajera)return;const a=document.createElement('a');a.href=s.excel_cajera.data;a.download=s.excel_cajera.name;a.click();}
+async function marcarComp(id) {
+  const s=S.solicitudes.find(x=>x.id===id); if(!s)return;
+  s.estado='completada'; s.timestamp_completada=new Date().toISOString(); s.completada_por=U.name;
+  toast('Confirmando...','');
+  try{await gasPost({action:'actualizarCompletada',id,auxiliar:U.name,timestamp_completada:s.timestamp_completada});toast('✅ Recepción física confirmada','success');}
+  catch(e){toast('⚠ Actualizado localmente','error');}
+  renderTabs(); renderContent();
+}
+function vComp(){
+  const items=S.solicitudes.filter(s=>s.estado==='completada');
+  return `<div class="sec-hdr"><div><div class="sec-title">Completadas</div><div class="sec-sub">${items.length} solicitud(es)</div></div></div>
+  ${items.length?items.map(s=>cResumen(s,true)).join(''):empty('✔','Sin completadas aún')}`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  AUXILIAR — GESTIÓN DE EMPLEADOS
+// ─────────────────────────────────────────────────────────
+function vEmps() {
+  return `<div class="sec-hdr"><div><div class="sec-title">Empleados Autorizados</div><div class="sec-sub">${S.empleados.length} registrado(s)</div></div><button class="btn btn-orange btn-sm" onclick="mNuevoEmp()">+ Nuevo Empleado</button></div>
+  <div class="fbar"><input class="si" placeholder="🔍 Buscar por nombre o código..." id="empFilt" oninput="renderContent()"/></div>
+  ${tblEmps()}`;
+}
+function tblEmps() {
+  const q=(document.getElementById('empFilt')?.value||'').toLowerCase();
+  const lista=S.empleados.filter(e=>!q||e.nombre.toLowerCase().includes(q)||e.codigo.toLowerCase().includes(q));
+  if(!lista.length) return empty('👤','No hay empleados registrados');
+  return `<table class="tbl"><thead><tr><th>Código</th><th>Nombre</th><th>Departamento</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+  ${lista.map(e=>`<tr>
+    <td class="mono text-orange">${e.codigo}</td>
+    <td class="fw6">${e.nombre}</td>
+    <td class="text-muted">${e.departamento||'—'}</td>
+    <td><span class="status ${e.activo?'st-activo':'st-inactivo'}">${e.activo?'Activo':'Inactivo'}</span></td>
+    <td><div class="brow">
+      <button class="btn btn-ghost btn-sm" onclick="toggleEmp('${e.codigo}')">${e.activo?'🔒 Desactivar':'🔓 Activar'}</button>
+      <button class="btn btn-ghost btn-sm" onclick="editEmp('${e.codigo}')">✏ Editar</button>
+    </div></td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function mNuevoEmp() {
+  document.getElementById('modalBody').innerHTML=`
+  <div class="modal-title">Nuevo Empleado</div>
+  <div class="modal-sub">Registra un empleado para que pueda entregar facturas con su código</div>
+  <div class="frow f2">
+    <div class="fg"><label class="flabel">Código de Empleado *</label><input class="fctl mono" id="mCod" placeholder="EMP-001" oninput="this.value=this.value.toUpperCase()"/></div>
+    <div class="fg"><label class="flabel">Nombre Completo *</label><input class="fctl" id="mNom" placeholder="Nombre del empleado"/></div>
+  </div>
+  <div class="fg mb8"><label class="flabel">Departamento / Área</label><input class="fctl" id="mDep" placeholder="Ej: Compras, Administración, Taller..."/></div>
+  <div class="brow mt12"><button class="btn btn-orange" onclick="saveNuevoEmp()">💾 Guardar</button><button class="btn btn-ghost" onclick="closeModal()">Cancelar</button></div>`;
+  openModal();
+}
+async function saveNuevoEmp() {
+  const cod=document.getElementById('mCod').value.trim().toUpperCase();
+  const nom=document.getElementById('mNom').value.trim();
+  const dep=document.getElementById('mDep').value.trim();
+  if(!cod||!nom){toast('Código y nombre son obligatorios','error');return;}
+  if(S.empleados.find(e=>e.codigo===cod)){toast('Ese código ya existe','error');return;}
+  const emp={codigo:cod,nombre:nom,departamento:dep,activo:true,creadoPor:U.name,timestamp:new Date().toISOString()};
+  toast('Guardando...','');
+  try{const r=await gasPost({action:'nuevoEmpleado',data:emp});if(!r.ok){toast('Error: '+r.msg,'error');return;}toast('✅ Empleado registrado','success');}
+  catch(e){toast('⚠ Guardado localmente','error');}
+  S.empleados.push(emp); closeModal(); renderContent();
+}
+
+function editEmp(cod) {
+  const e=S.empleados.find(x=>x.codigo===cod); if(!e)return;
+  document.getElementById('modalBody').innerHTML=`
+  <div class="modal-title">Editar Empleado</div><div class="modal-sub mono">${e.codigo}</div>
+  <div class="frow f2">
+    <div class="fg"><label class="flabel">Código (no editable)</label><input class="fctl mono" value="${e.codigo}" disabled style="opacity:.6"/></div>
+    <div class="fg"><label class="flabel">Nombre Completo *</label><input class="fctl" id="eNom" value="${e.nombre}"/></div>
+  </div>
+  <div class="fg mb8"><label class="flabel">Departamento</label><input class="fctl" id="eDep" value="${e.departamento||''}"/></div>
+  <div class="brow mt12"><button class="btn btn-orange" onclick="saveEditEmp('${cod}')">💾 Guardar Cambios</button><button class="btn btn-ghost" onclick="closeModal()">Cancelar</button></div>`;
+  openModal();
+}
+async function saveEditEmp(cod) {
+  const e=S.empleados.find(x=>x.codigo===cod); if(!e)return;
+  const nom=document.getElementById('eNom').value.trim();
+  const dep=document.getElementById('eDep').value.trim();
+  if(!nom){toast('El nombre es obligatorio','error');return;}
+  e.nombre=nom; e.departamento=dep;
+  try{await gasPost({action:'editarEmpleado',codigo:cod,nombre:nom,departamento:dep});toast('✅ Datos actualizados','success');}
+  catch(e2){toast('⚠ Actualizado localmente','error');}
+  closeModal(); renderContent();
+}
+async function toggleEmp(cod) {
+  const e=S.empleados.find(x=>x.codigo===cod); if(!e)return;
+  const nuevo=!e.activo;
+  if(!confirm(`¿${nuevo?'Activar':'Desactivar'} a ${e.nombre}?`))return;
+  e.activo=nuevo;
+  try{await gasPost({action:'toggleEmpleado',codigo:cod,activo:nuevo});toast(`✅ Empleado ${nuevo?'activado':'desactivado'}`,'success');}
+  catch(e2){toast('⚠ Actualizado localmente','error');}
+  renderContent();
+}
+
+// ─────────────────────────────────────────────────────────
+//  COMPONENTES COMPARTIDOS
+// ─────────────────────────────────────────────────────────
+function cResumen(s,btn) {
+  const tot=s.facturas.reduce((a,f)=>a+f.monto,0);
+  const stMap={pendiente:'st-pendiente',recibida_cajera:'st-recibida',procesada:'st-procesada',completada:'st-completada'};
+  return `<div class="card"><div class="card-hdr"><div><div class="card-title mono">${s.id}</div>
+  <div class="card-meta">👤 ${s.entregador} ${s.empleadoCodigo?`<span class="badge-code">${s.empleadoCodigo}</span>`:''} · ${s.proveedor} · ${s.facturas.length} factura(s) · ${fd(s.timestamp)}</div></div>
+  <div style="text-align:right"><div class="text-orange fw6 mono">L. ${fmt(tot)}</div><span class="status ${stMap[s.estado]||'st-pendiente'}">${lbEst(s.estado)}</span></div></div>
+  ${btn?`<button class="btn btn-ghost btn-sm" onclick="verDet('${s.id}')">🔍 Ver Detalle</button>`:s.facturas.map(f=>mf(f)).join('')}
+  </div>`;
+}
+
+function mf(f) {
+  return `<div class="mf"><div class="mf-hdr"><span class="mf-num">N° ${f.numero}</span><span class="text-orange fw6">L. ${fmt(f.monto)}</span></div>
+  <div style="font-size:12px;color:#aaa">${f.pago} · ${fdo(f.fecha)}${f.obs?' · '+f.obs:''}</div>
+  ${f.imgB64?`<div class="thumbs-row"><img class="thumb" src="${f.imgB64}" onclick="openLB('${f.imgB64}')"/></div>`:''}</div>`;
+}
+
+function verDet(id) {
+  const s=S.solicitudes.find(x=>x.id===id); if(!s)return;
+  const tot=s.facturas.reduce((a,f)=>a+f.monto,0);
+  document.getElementById('modalBody').innerHTML=`
+  <div class="modal-title">Detalle de Solicitud</div><div class="modal-sub mono">${s.id}</div>
+  <div class="dr"><div class="di"><div class="dl">Empleado</div><div class="dv">${s.entregador} <span class="badge-code">${s.empleadoCodigo||''}</span></div></div>
+  <div class="di"><div class="dl">Proveedor</div><div class="dv">${s.proveedor}</div></div>
+  <div class="di"><div class="dl">Estado</div><div class="dv">${lbEst(s.estado)}</div></div></div>
+  <div class="dr"><div class="di"><div class="dl">Enviada</div><div class="dv">${fd(s.timestamp)}</div></div>
+  <div class="di"><div class="dl">Recibida</div><div class="dv">${s.timestamp_recibida?fd(s.timestamp_recibida):'—'}</div></div>
+  <div class="di"><div class="dl">Total</div><div class="dv mono text-orange">L. ${fmt(tot)}</div></div></div>
+  <hr class="divider">
+  <div class="fsec-title">Facturas (${s.facturas.length})</div>
+  ${s.facturas.map((f,i)=>`<div class="fblock"><div class="fblock-hdr"><span class="fnum">FACTURA #${i+1} — N° ${f.numero}</span><span class="text-orange fw6">L. ${fmt(f.monto)}</span></div>
+  <div class="dr"><div class="di"><div class="dl">Fecha</div><div class="dv">${fdo(f.fecha)}</div></div><div class="di"><div class="dl">Forma Pago</div><div class="dv">${f.pago}</div></div>${f.obs?`<div class="di"><div class="dl">Obs.</div><div class="dv">${f.obs}</div></div>`:''}</div>
+  ${f.imgB64?`<img src="${f.imgB64}" style="max-width:100%;max-height:220px;border-radius:3px;border:1px solid var(--border);cursor:pointer;margin-top:8px" onclick="openLB('${f.imgB64}')"/>`:''}</div>`).join('')}
+  ${s.notas_cajera?`<div style="margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:3px;font-size:13px"><strong class="text-muted">Notas cajera:</strong> ${s.notas_cajera}</div>`:''}
+  ${s.excel_cajera?`<div style="margin-top:8px;padding:10px 12px;background:var(--bg3);border-radius:3px;display:flex;justify-content:space-between;align-items:center"><span>📊 ${s.excel_cajera.name}</span><button class="btn btn-ghost btn-sm" onclick="dlExcel('${s.id}')">⬇ Descargar</button></div>`:''}`;
+  openModal();
+}
+
+// ─────────────────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────────────────
+function empty(ic,tx){return `<div class="empty"><div class="empty-icon">${ic}</div><div class="empty-text">${tx}</div></div>`;}
+function hoy(){return new Date().toISOString().split('T')[0];}
+function fd(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('es-HN',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('es-HN',{hour:'2-digit',minute:'2-digit'});}
+function fdo(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+function fmt(n){return Number(n).toLocaleString('es-HN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function lbEst(e){return{pendiente:'Pendiente',recibida_cajera:'Recibida',procesada:'En Auxiliar',completada:'Completada'}[e]||e;}
+function f2b64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
+let _tt;
+function toast(msg,type){const e=document.getElementById('toast');e.textContent=msg;e.className='show '+(type||'');clearTimeout(_tt);_tt=setTimeout(()=>{e.className='';},3500);}
+function openModal(){document.getElementById('modalOv').classList.add('open');}
+function closeModal(){document.getElementById('modalOv').classList.remove('open');}
+function openLB(src){document.getElementById('lbImg').src=src;document.getElementById('lightbox').classList.add('open');}
+function closeLB(){document.getElementById('lightbox').classList.remove('open');}
+</script>
+
+<!--
+════════════════════════════════════════════════════════════════
+  GOOGLE APPS SCRIPT — pegar completo en script.google.com
+  
+  SHEETS REQUERIDAS:
+  ┌─ "Solicitudes" ──────────────────────────────────────────────┐
+  │ id | empleadoCodigo | entregador | proveedor | timestamp    │
+  │ estado | facturas(JSON) | notas_cajera | excel_cajera(JSON) │
+  │ timestamp_recibida | timestamp_procesada | recibida_por     │
+  │ completada_por                                               │
+  └──────────────────────────────────────────────────────────────┘
+  ┌─ "Empleados" ───────────────────┐
+  │ codigo | nombre | departamento  │
+  │ activo | creadoPor | timestamp  │
+  └─────────────────────────────────┘
+════════════════════════════════════════════════════════════════
+
+const SHEET_ID  = 'TU_SHEET_ID_AQUI';
+const FOLDER_ID = 'TU_FOLDER_DRIVE_ID_AQUI';
+
+function doGet(e) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const a  = e.parameter.action;
+
+  if (a === 'getSolicitudes') {
+    const data = s2obj(ss.getSheetByName('Solicitudes'));
+    data.forEach(r => {
+      try { r.facturas     = JSON.parse(r.facturas); }     catch(x){}
+      try { r.excel_cajera = JSON.parse(r.excel_cajera); } catch(x){}
+    });
+    return J({ ok:true, data });
+  }
+
+  if (a === 'getEmpleados') {
+    const data = s2obj(ss.getSheetByName('Empleados'));
+    data.forEach(r => { r.activo = (r.activo === true || r.activo === 'TRUE'); });
+    return J({ ok:true, data });
+  }
+
+  if (a === 'validarEmpleado') {
+    const emps = s2obj(ss.getSheetByName('Empleados'));
+    const emp  = emps.find(x => x.codigo === e.parameter.codigo);
+    if (!emp) return J({ ok:false });
+    emp.activo = (emp.activo === true || emp.activo === 'TRUE');
+    return J({ ok:true, empleado:emp });
+  }
+
+  return J({ ok:false });
+}
+
+function doPost(e) {
+  const p  = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+
+  if (p.action === 'nuevaSolicitud') {
+    const d = p.data;
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    d.facturas.forEach((f, i) => {
+      if (f.imgB64) {
+        const mime = f.imgB64.split(';')[0].split(':')[1];
+        const blob = Utilities.newBlob(Utilities.base64Decode(f.imgB64.split(',')[1]), mime, f.imgName||'fact'+i+'.jpg');
+        f.driveUrl = folder.createFile(blob).getUrl();
+        delete f.imgB64;
+      }
+    });
+    ss.getSheetByName('Solicitudes').appendRow([
+      d.id, d.empleadoCodigo, d.entregador, d.proveedor, d.timestamp, d.estado,
+      JSON.stringify(d.facturas),'','','','','',''
+    ]);
+    return J({ ok:true });
+  }
+
+  if (p.action === 'actualizarEstado') {
+    const sh = ss.getSheetByName('Solicitudes');
+    sf(sh, p.id, 'estado', p.estado);
+    sf(sh, p.id, 'timestamp_recibida', p.timestamp_recibida);
+    sf(sh, p.id, 'recibida_por', p.cajera);
+    return J({ ok:true });
+  }
+
+  if (p.action === 'actualizarProcesada') {
+    const sh = ss.getSheetByName('Solicitudes');
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    let xi = null;
+    if (p.excelB64) {
+      const blob = Utilities.newBlob(Utilities.base64Decode(p.excelB64.split(',')[1]),
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', p.excelName);
+      xi = { name:p.excelName, driveUrl: folder.createFile(blob).getUrl() };
+    }
+    sf(sh, p.id, 'estado', 'procesada');
+    sf(sh, p.id, 'notas_cajera', p.notas);
+    sf(sh, p.id, 'excel_cajera', JSON.stringify(xi));
+    sf(sh, p.id, 'timestamp_procesada', p.timestamp_procesada);
+    return J({ ok:true });
+  }
+
+  if (p.action === 'actualizarCompletada') {
+    const sh = ss.getSheetByName('Solicitudes');
+    sf(sh, p.id, 'estado', 'completada');
+    sf(sh, p.id, 'completada_por', p.auxiliar);
+    return J({ ok:true });
+  }
+
+  if (p.action === 'nuevoEmpleado') {
+    const d = p.data;
+    ss.getSheetByName('Empleados').appendRow([d.codigo, d.nombre, d.departamento||'', true, d.creadoPor, d.timestamp]);
+    return J({ ok:true });
+  }
+
+  if (p.action === 'editarEmpleado') {
+    const sh = ss.getSheetByName('Empleados');
+    sfe(sh, p.codigo, 'nombre', p.nombre);
+    sfe(sh, p.codigo, 'departamento', p.departamento);
+    return J({ ok:true });
+  }
+
+  if (p.action === 'toggleEmpleado') {
+    sfe(ss.getSheetByName('Empleados'), p.codigo, 'activo', p.activo);
+    return J({ ok:true });
+  }
+
+  return J({ ok:false });
+}
+
+function s2obj(sheet) {
+  const rows = sheet.getDataRange().getValues();
+  const h = rows[0];
+  return rows.slice(1).map(r => { const o={}; h.forEach((k,i)=>o[k]=r[i]); return o; });
+}
+function sf(sheet, id, campo, valor) {
+  const d=sheet.getDataRange().getValues(); const h=d[0];
+  const col=h.indexOf(campo); const ic=h.indexOf('id'); if(col<0||ic<0)return;
+  for(let i=1;i<d.length;i++) if(d[i][ic]===id){sheet.getRange(i+1,col+1).setValue(valor);break;}
+}
+function sfe(sheet, codigo, campo, valor) {
+  const d=sheet.getDataRange().getValues(); const h=d[0];
+  const col=h.indexOf(campo); const cc=h.indexOf('codigo'); if(col<0||cc<0)return;
+  for(let i=1;i<d.length;i++) if(d[i][cc]===codigo){sheet.getRange(i+1,col+1).setValue(valor);break;}
+}
+function J(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
+-->
+</body>
+</html>
